@@ -32,7 +32,7 @@ mod game;
 mod game_file;
 mod host;
 mod player;
-mod ws_msg;
+pub mod ws_msg;
 
 pub fn build_app(state: Arc<AppState>) -> Router {
     let room_routes = Router::new()
@@ -140,7 +140,7 @@ async fn create_room(
 }
 
 #[derive(Debug)]
-enum ConnectionStatus {
+pub enum ConnectionStatus {
     Connected,
     Disconnected,
 }
@@ -443,5 +443,5 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
-type HeartbeatId = u32;
-type UnixMs = u64; // # of milliseconds since unix epoch, or delta thereof
+pub type HeartbeatId = u32;
+pub type UnixMs = u64; // # of milliseconds since unix epoch, or delta thereof
