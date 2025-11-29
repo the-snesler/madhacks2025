@@ -9,7 +9,7 @@ use tokio_mpmc::{ChannelError, Sender};
 
 use crate::{
     ConnectionStatus, HeartbeatId, UnixMs,
-    ws_msg::{WsMsg, WsMsgChannel},
+    ws_msg::WsMsg,
 };
 
 pub type PlayerId = u32;
@@ -108,7 +108,7 @@ impl PlayerEntry {
         if let Some(dohb) = self.times_doheartbeat.get(&hbid) {
             if let Some(lat_fwd) = dohb.delta_32bit() {
                 println!("t_lathb={t_lathb},lat_fwd={lat_fwd}");
-                let lat = if (t_lathb > lat_fwd) {
+                let lat = if t_lathb > lat_fwd {
                     t_lathb - lat_fwd
                 } else {
                     0
@@ -149,7 +149,7 @@ impl PlayerEntry {
 impl TrackedMessageTime {
     pub fn delta(&self) -> Option<u64> {
         self.t_recv.map(|x| {
-            if (x > self.t_sent) {
+            if x > self.t_sent {
                 x - self.t_sent
             } else {
                 0

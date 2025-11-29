@@ -1,14 +1,12 @@
 use std::fmt;
 
-use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
-use tokio_mpmc::Sender;
 
 use crate::{
     PlayerEntry,
     host::HostEntry,
-    player::{self, Player, PlayerId},
-    ws_msg::{WsMsg, WsMsgChannel},
+    player::{Player, PlayerId},
+    ws_msg::WsMsg,
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
