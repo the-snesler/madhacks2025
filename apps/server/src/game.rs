@@ -53,6 +53,12 @@ pub struct RoomResponse {
     pub messages_to_specific: Vec<(PlayerId, WsMsg)>,
 }
 
+impl Default for RoomResponse {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl RoomResponse {
     pub fn new() -> Self {
         Self {
@@ -173,29 +179,24 @@ impl Room {
             }
 
             WsMsg::Buzz {} => {
-                if self.state == GameState::WaitingForBuzz {
-                    if let Some(player_id) = sender_id {
-                        if let Some(player_entry) =
-                            self.players.iter_mut().find(|p| p.player.pid == player_id)
-                        {
-                            if !player_entry.player.buzzed {
-                                player_entry.player.buzzed = true;
-                                self.current_buzzer = Some(player_id);
-                                self.state = GameState::Answer;
+                if self.state == GameState::WaitingForBuzz
+                    && let Some(player_id) = sender_id
+                    && let Some(player_entry) =
+                        self.players.iter_mut().find(|p| p.player.pid == player_id)
+                    && !player_entry.player.buzzed
+                {
+                    player_entry.player.buzzed = true;
+                    self.current_buzzer = Some(player_id);
+                    self.state = GameState::Answer;
 
-                                let buzzed_msg = WsMsg::Buzzed {
-                                    pid: player_id,
-                                    name: player_entry.player.name.clone(),
-                                };
+                    let buzzed_msg = WsMsg::Buzzed {
+                        pid: player_id,
+                        name: player_entry.player.name.clone(),
+                    };
 
-                                return RoomResponse::to_host(buzzed_msg)
-                                    .merge(RoomResponse::broadcast_state(
-                                        self.build_game_state_msg(),
-                                    ))
-                                    .merge(self.build_all_player_states());
-                            }
-                        }
-                    }
+                    return RoomResponse::to_host(buzzed_msg)
+                        .merge(RoomResponse::broadcast_state(self.build_game_state_msg()))
+                        .merge(self.build_all_player_states());
                 }
                 RoomResponse::new()
             }
@@ -247,13 +248,13 @@ impl Room {
             return RoomResponse::new();
         };
 
-        if let Some(buzzer_id) = self.current_buzzer {
-            if let Some(player) = self.players.iter_mut().find(|p| p.player.pid == buzzer_id) {
-                if correct {
-                    player.player.score += question_value;
-                } else {
-                    player.player.score -= question_value;
-                }
+        if let Some(buzzer_id) = self.current_buzzer
+            && let Some(player) = self.players.iter_mut().find(|p| p.player.pid == buzzer_id)
+        {
+            if correct {
+                player.player.score += question_value;
+            } else {
+                player.player.score -= question_value;
             }
         }
 

@@ -7,10 +7,7 @@ use std::{
 use serde::{Deserialize, Serialize};
 use tokio_mpmc::{ChannelError, Sender};
 
-use crate::{
-    ConnectionStatus, HeartbeatId, UnixMs,
-    ws_msg::WsMsg,
-};
+use crate::{ConnectionStatus, HeartbeatId, UnixMs, ws_msg::WsMsg};
 
 pub type PlayerId = u32;
 
@@ -108,11 +105,7 @@ impl PlayerEntry {
         if let Some(dohb) = self.times_doheartbeat.get(&hbid) {
             if let Some(lat_fwd) = dohb.delta_32bit() {
                 println!("t_lathb={t_lathb},lat_fwd={lat_fwd}");
-                let lat = if t_lathb > lat_fwd {
-                    t_lathb - lat_fwd
-                } else {
-                    0
-                };
+                let lat = t_lathb.saturating_sub(lat_fwd);
                 for i in 1..(self.latencies.len() - 1) {
                     self.latencies[i - 1] = self.latencies[i];
                 }
@@ -148,13 +141,7 @@ impl PlayerEntry {
 
 impl TrackedMessageTime {
     pub fn delta(&self) -> Option<u64> {
-        self.t_recv.map(|x| {
-            if x > self.t_sent {
-                x - self.t_sent
-            } else {
-                0
-            }
-        })
+        self.t_recv.map(|x| x.saturating_sub(self.t_sent))
     }
 
     pub fn delta_32bit(&self) -> Option<u32> {
