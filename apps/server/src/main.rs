@@ -347,7 +347,7 @@ async fn ws_socket_handler(
                                     }
                                 }
                                 let s = csender;
-                                tokio::time::sleep(Duration::from_millis(500 - latc)).await;
+                                tokio::time::sleep(Duration::from_millis(500_u64 .saturating_sub(latc))).await;
                                 s.send(witnessc).await
                             });
                         }
