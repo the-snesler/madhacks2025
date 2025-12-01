@@ -12,9 +12,7 @@ pub struct HostEntry {
 
 impl fmt::Debug for HostEntry {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("HostEntry")
-            .field("pid", &self.pid)
-            .finish()
+        f.debug_struct("HostEntry").field("pid", &self.pid).finish()
     }
 }
 

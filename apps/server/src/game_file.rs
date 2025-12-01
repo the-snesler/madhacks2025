@@ -2,7 +2,6 @@ use serde::Deserialize;
 
 use crate::game::{Category, Question};
 
-
 #[derive(Deserialize)]
 struct GameFileClue {
     value: u32,
@@ -30,12 +29,16 @@ impl From<GameFileCategory> for Category {
     fn from(gfc: GameFileCategory) -> Self {
         Category {
             title: gfc.category,
-            questions: gfc.clues.into_iter().map(|c| Question {
-                question: c.clue,
-                answer: c.solution,
-                value: c.value,
-                answered: false,
-            }).collect(),
+            questions: gfc
+                .clues
+                .into_iter()
+                .map(|c| Question {
+                    question: c.clue,
+                    answer: c.solution,
+                    value: c.value,
+                    answered: false,
+                })
+                .collect(),
         }
     }
 }
