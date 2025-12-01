@@ -1,4 +1,9 @@
-use std::{collections::HashMap, sync::Arc, thread, time::Duration};
+use std::{
+    collections::HashMap,
+    sync::Arc,
+    thread,
+    time::{Duration, SystemTime},
+};
 
 use anyhow::anyhow;
 use axum::{
@@ -33,6 +38,8 @@ mod game_file;
 mod host;
 mod player;
 mod ws_msg;
+
+const ROOM_TTL_MINUTES: u64 = 30;
 
 struct AppState {
     room_map: Mutex<HashMap<String, Room>>,
@@ -289,6 +296,8 @@ async fn ws_socket_handler(
             ));
         }
 
+        room.touch();
+
         for player in &room.players {
             println!("player: {}", player.player.pid);
         }
@@ -411,12 +420,44 @@ async fn cpr_handler(
     }
 }
 
+async fn cleanup_inactive_rooms(state: &Arc<AppState>) {
+    let mut room_map = state.room_map.lock().await;
+    let threshold = SystemTime::now()
+        .checked_sub(Duration::from_secs(ROOM_TTL_MINUTES * 60))
+        .unwrap_or(SystemTime::UNIX_EPOCH);
+
+    let rooms_to_remove: Vec<String> = room_map
+        .iter()
+        .filter(|(_, room)| room.last_activity < threshold)
+        .map(|(code, _)| code.clone())
+        .collect();
+
+    for code in &rooms_to_remove {
+        room_map.remove(code);
+        println!("Cleaned up inactive room: {}", code);
+    }
+
+    if !rooms_to_remove.is_empty() {
+        println!("Cleaned up {} inactive rooms", rooms_to_remove.len());
+    }
+}
+
 const HOST: &str = "0.0.0.0";
 const PORT: u16 = 3000;
 
 #[tokio::main]
 async fn main() {
     let state = Arc::new(AppState::new());
+
+    let cleanup_state = state.clone();
+
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(Duration::from_secs(60));
+        loop {
+            interval.tick().await;
+            cleanup_inactive_rooms(&cleanup_state).await;
+        }
+    });
 
     let room_routes = Router::new()
         .route("/create", post(create_room))
